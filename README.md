@@ -3,13 +3,7 @@
 
 ## 目录
 
-  - 视觉SLAM
-  - VMware虚拟机Linux系统分区扩容方法
-  - VMware普通版虚拟机不支持显卡直连，因而无法使用CUDA和CuDNN，只能安装CPU版，推理Windows系统中的GPU版训练的模型
-  - 使用CMake-GUI进行多版本依赖安装
-  - 在项目中添加自定义路径的第三方库，通过修改CMakeLists.txt并重新编译的实现，让主项目和非主项目的源代码文件均能调用（C++编程技巧：Pimpl思想）
-  - 自己编译自定义的C++库为单独的库文件
-  - 解决terminate called without an active exception Aborted (core dumped)未知错误。使用Linux自带的gdb工具来运行程序，分析内存相关的程序中途崩溃的原因，分析生成的core文件，使用更全面的工具valgrind来分析内存的使用情况。
+  - 视觉SLAM框架图
   - 安装ORB-SLAM3和ORB-SLAM2（Ubuntu）
     - 安装ORB-SLAM2，主要是因为GCNv2_SLAM自带ORB-SLAM2
   - 使用ORB-SLAM3和GCNv2_SLAM
@@ -20,10 +14,206 @@
     - 代码逻辑
   - 测试算法精度，获得确切的表格数据
   - 卡尔曼滤波
+  - VMware虚拟机Linux系统分区扩容方法
+  - VMware普通版虚拟机不支持显卡直连，因而无法使用CUDA和CuDNN，只能安装CPU版，推理Windows系统中的GPU版训练的模型
+  - 使用CMake-GUI进行多版本依赖安装
+  - 在项目中添加自定义路径的第三方库，通过修改CMakeLists.txt并重新编译的实现，让主项目和非主项目的源代码文件均能调用（C++编程技巧：Pimpl思想）
+  - 自己编译自定义的C++库为单独的库文件
+  - 解决terminate called without an active exception Aborted (core dumped)未知错误。使用Linux自带的gdb工具来运行程序，分析内存相关的程序中途崩溃的原因，分析生成的core文件，使用更全面的工具valgrind来分析内存的使用情况。
 
-## 视觉SLAM
+## 视觉SLAM框架图
 
 ![ac50fdc74999b2030ecde0ee33ec52e4.png](_resources/ac50fdc74999b2030ecde0ee33ec52e4.png)
+
+## 安装ORB-SLAM3和ORB-SLAM2（Ubuntu）
+
+通过git下载ORB-SLAN3源码（必须通过国内源或其他方式来下载，直接git会因为网速过慢出现各种错误）。
+
+安装以下依赖（版本可以通过终端确定，不同依赖的确定方法不同）：
+
+Ubuntu20.04
+Opencv4.2.0（ORB-SLAM2需要Opencv3.多，可以安装多一个Opencv3.4.5，测试可行）
+C++11（有就行）
+Eigen3.3.7（ORB-SLAM2在编译时会有警告，但不影响编译）
+Python3.8（有就行）
+Pangolin0.8（ORB-SLAM2在编译时会有警告，但不影响编译）
+
+更改编译文件（通过gedit指令打开文本文件进行修改并保存）：
+
+`gedit home/orb_slam3/CMakeLists.txt`：33行左右，改成`find_package(OpenCV 4.2)`，41行左右，改成`find_package(Eigen3 REQUIRED)`。
+
+`gedit /home/orb_slam3/Examples_old/ROS/ORB_SLAM3/CMakeLists.txt`：33行左右，改成`find_package(OpenCV 4.2)`，41行左右，改成`find_package(Eigen3 REQUIRED)`。49行左右，改成`${PROJECT_SOURCE_DIR}/…/…/…/Thirdparty/Sophus`
+
+`gedit /home/orb_slam3/Thirdparty/DBoW2/CMakeLists.txt`：33行左右，改成`find_package(OpenCV 4.2)`
+
+`gedit /home/orb_slam3/Examples/Monocular/mono_euroc.cc`：83行左右，false改为true。
+
+`gedit ~/.bashrc`：在文件末尾添加一行，添加`export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:PATH/ORB_SLAM3/Examples_old/ROS`，然后执行`source ~/.bashrc`生效改动。
+
+打开build.sh，将`make -j`均改为`make -j核数`。
+
+在ORB_SLAM3文件夹下打开终端，进行ORB-SLAM3的编译：
+
+```
+chmod +x build.sh # 获得权限
+./build.sh # 进行编译。注意此指令是运行同目录下的build.sh文件，又因为.sh文件本质上是终端运行的脚本，因此各种需要编译的第三方库的相对路径是相对于同目录来说的，必须在同路径下用./build.sh运行来保证相对路径正确，不能在其他路径下例如../build.sh运行会导致编译项目不完全。
+```
+
+编译多次完全卡死（鼠标不能进行交互），检查上述对于CMakeLists.txt的修改是否正确，虚拟机重启后它可能会自动进行的更改，提高虚拟机核数（一般1/4），提高虚拟机内存至8G。
+
+### 安装ORB-SLAM2，主要是因为GCNv2_SLAM自带ORB-SLAM2
+
+[GCNv2复现-CPU-CSDN博客](undefined)
+
+GCNv2需要安装1.0.1版本以上的libtorch，此处选择1.4.0。
+
+GCNv2在Github上的开源本来就和ORB-SLAM2合并在一起，称为GCNv2_SLAM。
+
+GCNv2的PyTorch原理代码（没什么用，不自己训练）：
+
+![f3f5d48509b6c1fc9ba2bac14e6cbc58.png](_resources/f3f5d48509b6c1fc9ba2bac14e6cbc58.png)
+
+![93cd7cb493ac9ba24577df679665bad2.png](_resources/93cd7cb493ac9ba24577df679665bad2.png)
+
+## 使用ORB-SLAM3和GCNv2_SLAM
+
+### 测试ORB-SLAM3
+
+https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets#downloads
+
+![9168012c9954845d218f56f6caf2b006.png](_resources/9168012c9954845d218f56f6caf2b006.png)
+
+在ORB_SLAM3文件夹，创建新的文件夹datasets，然后在datasets文件夹下，创建新的文件夹MH01，把数据集压缩包解压后的MH01_01_easy/mav0文件夹复制到这里。
+
+在ORB_SLAM3/Examples文件夹下打开终端，对数据集运行ORB_SLAM3：
+
+`./Monocular/mono_euroc ../Vocabulary/ORBvoc.txt ./Monocular/EuRoC.yaml ../datasets/MH01 ./Monocular/EuRoC_TimeStamps/MH01.txt`
+
+对于TUM数据集，下载rgbd_dataset_freiburg3_long_office_household到datasets
+
+在ORB_SLAM3文件夹下打开终端，对数据集运行ORB_SLAM3：
+
+`./Examples/RGB-D/rgbd_tum ./Vocabulary/ORBvoc.txt ./Examples/RGB-D/TUM3.yaml ./datasets/rgbd_dataset_freiburg3_long_office_household ./datasets/rgbd_dataset_freiburg3_long_office_household/associations.txt`
+
+（在ORB_SLAM3/Examples/RGB-D文件夹打开终端）`./rgbd_tum Vocabulary/ORBvoc.txt ./TUM3.yaml datasets/rgbd_dataset_freiburg3_walking_rpy datasets/rgbd_dataset_freiburg3_walking_rpy/associations.txt`
+
+### 测试GCNv2_SLAM
+
+[GCNv2复现-CPU-CSDN博客](undefined)
+
+![642f52890a955fa3f5e31af670b6e17d.png](_resources/642f52890a955fa3f5e31af670b6e17d.png)
+
+在GCNv2_SLAM文件夹，创建新的文件夹datasets，然后在datasets创建夹下，建新的文件夹TUM，把数据集压缩包解压到此路径下。
+
+接下来，由于GCNv2_SLAM的输入是经过自行合并的数据，因此需要对解压的数据删除注释然后进行合并的预处理才能跑。
+
+将合并得到的associations.txt放到上述的数据集压缩包解压得到的文件夹下，打开终端cd到GCN2文件夹下执行（run.sh中可以查看运行指令格式）：
+
+- 使用320x240（640x480模型效果很差，不是主要的训练方向）的GCNv2模型（测试用例仅限RGBD形式）：
+
+`GCN_PATH=gcn2_320x240.pt ./rgbd_gcn ../Vocabulary/GCNvoc.bin TUM3_small.yaml /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household/associations.txt`
+
+- 不使用GCNv2模型仅使用ORB-SLAM2（RGBD形式）：
+
+`USE_ORB=1 ./rgbd_gcn ../Vocabulary/GCNvoc.bin TUM3_small.yaml /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household/associations.txt`
+
+其中rgbd_gcn.cc即为具体执行的文件。
+
+上述的long_office_household是平稳围绕一个静态办公室工位拍摄的素材，如果换成walking_rpy，有动态人体运动的素材，可以看到SLAM直接飞了，这就是结合yolo剔除动态点的意义。
+
+## 为Yolo配置环境并下载Yolo
+
+Yolo基于PyTorch，PyTorch安装过程：[（个人）人工智能技术及应用（大二下）](undefined)。
+
+Yolo v5/v7/v9是一个系列的，Yolo v8/v10是一个系列的，Yolov10在资源占用的减少上获得了质的提升，非常适合用于嵌入式设备的部署。
+
+Yolov8主干网络为MobileNetV2。
+
+Yolov8以及Yolov10虽然是同一系列，但因为都使用本地的ultralytics库，建议还是区分两个不同的虚拟环境。如果需要对Yolov8以及Yolov10的代码进行修改，就不能使用`pip install ultralytics`（默认使用pip安装的ultralytics库而不是本地的ultralytics库，因而对本地的ultralytics库的代码修改不会生效），而是在虚拟环境下命令行到项目的目录先后执行，`pip install -r requirements.txt
+`（可添加`-i https://pypi.tuna.tsinghua.edu.cn/simple`换源）和`pip install -e .`，其中前者在虚拟环境中安装单独的依赖而不包括ultralytics库，后者则是将本地的ultralytics库安装到虚拟环境中并建立软链接（注意需要先卸载`pip uninstall ultralytics`，使得虚拟环境的ultralytics库与本地的ultralytics库关联，而不是与通过`pip install ultralytics`安装在虚拟环境默认路径下的ultralytics库关联，因此可以同步对本地的ultralytics库的代码修改，如果需要更换整个Yolo项目的目录，那么ultralytics库也需要重新执行`pip install -e .`来与虚拟环境建立软链接，也因为这样，最好一个Yolo项目对应一个虚拟环境，因为只要对一个项目的ultralytics库的代码进行修改就会同步到虚拟环境中）。
+
+pip install安装模块时会出现错误（ERROR: Could not find a version that satisfies the requirement xxx (from versions: none)，此错误的通用解是：在虚拟环境下power shell进行单独的pip install安装。
+
+注意有一些未知问题（例如ultralytics库循环调用）可能是因为本地的ultralytics库有问题，此时直接把Yolov10的源代码的ultralytics库覆盖并重新`pip install -e .`更新虚拟环境中的ultralytics库并对新的ultralytics库建立软链接即可。
+
+测试：`yolo predict model=yolov10s.pt`，默认运行的是`yolov10-main\ultralytics\nn\tasks.py`，需要自行下载并把yolov10s.pt模型放到与tasks.py相同目录下。
+
+测试：`yolo export model=yolov10s.pt format=onnx opset=13 simplify` 将当前目录下的yolov10s.pt模型转化为yolov10s.onnx。
+
+测试：	`yolo predict model=yolov10s.onnx` 需要把yolov10s.onnx模型放到当前目录下。
+
+测试：`python`，`import onnxruntime`，`onnxruntime.get_device()`测试onnxruntime是否能检测到GPU。
+
+## ORB-SLAM3与Yolo相结合
+
+由于YOLO的源码采用Python编写，ORB-SLAM3则采用C++编写，要将YOLO与ORB-SLAM3的运行环境结合，常见的方法有以下三种：
+
+1 先跑一遍YOLO程序，获得带有检测目标边界框的语义信息，然后再运行ORB_SLAM3结合边界框的语义信息去标记特征点，但这样做实际意义不大，YOLO和SLAM异步运行；
+
+2 使用UNIX域Socket实现Python和C++通信，该协议仅需要经过网络协议栈，不需要打包拆包、计算校验和、维护序列号应答，可以实现较高的通讯效率；
+
+3 第三种是使用C++去部署yolo，在ORB-SLAM3中单独写一个类用于实现yolo，可以使用libtorch、onnxruntime来实现这个功能。又因为Yolov10的版本较新，libtorch可能没有对应版本可用（C++版本的PyTorch以实现C++下跑.pt模型），且Yolov10可以训练输出onnx模型，因此可以使得onnx模型的推理过程通过onnxruntime来在C++中部署yolo。
+
+### 代码逻辑
+
+Yolo和ORB-SLAM的运行代码结合：
+
+对于通过Yolov10进行动态特征点的剔除，实际上有三种方法。第一种是通过语义分割对所有特征点进行逐一的排查（50ms级，因实时性太差不可采用）；第二种是通过目标检测框对识别到的动态物体和潜在动态物体的目标检测框内的特征点进行剔除（0.01ms级，精度尚可）；第三种是同时进行目标检测和语义分割，然后对动态物体的目标检测框内的特征点进行逐一排查（25ms级，精度最高）。
+
+在Github上搜索ORB-SLAM与GCNv2相结合的项目，和ORB-SLAM与Yolo相结合的项目，某些项目具有Comparing changes功能，比对原项目的修改，也就是ORB-SLAM的原项目的差别和具体改动。
+
+把Yolo模型推理并画框和剔除动态点的代码放置在Tracking.cc的Track()函数获得特征点之后，进行后处理之前。目标检测模型常常隔帧检测失效，需要将历史框和卡尔曼滤波获得的预测框也一起考虑来进行剔除弥补不稳定。
+
+反向思维，只在被其他静态物体汉明匹配到时延长存在时间，匹配到就保留。发现问题，反相之后发现有很多时候人体也是能够特征点匹配，但是这些帧被逻辑上框内点就不计算汉明距离标识色为倒计时而不是匹配点蓝色，所以以为人体特征点根本不能做匹配，其实还是有大半点可以的，而这些帧也是目标检测模型工作良好的帧，其实是不需要进行存储的，要存储的其实是那些目标检测不工作的帧的人体特征点，这怎么办呢？可能就需要卡尔曼滤波了。科研需要的严谨可以理解为从头到尾遇到的所有问题都有一个交代，无论是研究重点、一般处理还是无法处理，都需要提及并交代清楚，是针对一个问题的全面涉及的方案。
+
+卡尔曼滤波预测轨迹，但后几帧都没有怎么办？卡尔曼补的帧中的特征应该才是需要存储的帧，用于目标检测或卡尔曼失效的情况，或者辅助后续卡尔曼滤波的作用。而且目前历史框多的时候人体运动剔除的点太多，适量取帧和卡尔曼
+
+对于取潜在动态特征点计算汉明距离的方法，主要是为了提高低参数量目标检测对暂时静态人体的检测的鲁棒性，但需要后续结合深度或IMU。然后卡尔曼滤波框和潜在动态特征点获得的图片可以用于持续学习定制化。就算是只取下半身的特征点存储也还是少量脸头发能偶尔匹配到和天花板能一直匹配到，因此天花板一直有特征点也基本被GCNv2不作为关键特征点（和什么特征点的汉明距离都小，自然不能作为关键特征点，相比之下人体特征点很难进行匹配就很容易被作为关键特征点），因此取潜在动态特征点不结合深度和IMU可能不行，而且只能是静态时的。这也算是一种模型互补融合的创新。可以试试汉明距离阈值无限大测试目标检测失效帧的特征到底有多离谱，或者测试出一个阈值，与历史框和卡尔曼框内的重叠才能进行动态点剔除。可以看出，想法是会根据实验现象和认知和改进方向不断涌出的，即使是我这个第一次科研项目在具体实现上的问题也会延伸出以上的各种奇妙的想法，它们极大部分都是无效的，或者别人已经做过的且具有更成熟方案，而证明有效性和无效性就是研究的目的。
+
+直接取框的外围（代码加个取反条件即可）和边缘以外的特征点存储作为静态特征点，且需要通过匹配才能保留。仍然不行，鉴定为人头和天花板对什么特征的描述子都相近，可能不止需要描述子。卡尔曼多个对象分别的历史记录，因为可能互不一起被检测到，需要将不连续的历史记录拼一起。匈牙利算法数据关联提高鲁棒性。
+
+GCNv2数量和平均度支持动态点剔除和防止lost，历史记录+当前+卡尔曼滤波预测一起保持yolo鲁棒性。未来需要解决段错误问题+结合IMU+有效成果=论文
+
+（天坑）GCNv2的论文和相关论文没有提及，但它对于动态环境的鲁棒性提升巨大，即使不做动态物体特征点剔除，GCNv2_SLAM本身就已经既稳定精度又高。
+
+所以后续就是看移植GCNv2到ORB-SLAM3还是移植IMU到ORB-SLAM2了。还需要解决段错误跑不完全程的问题。使用docker来确保环境的完全一致性。
+
+段错误解决方法（无效，因为最新实验删去Yolo相关代码能跑通全程，是自行嵌入的Yolo代码的逻辑仍有内存泄漏的问题）：   1、主文件和Thirdparty/g2o文件中的CMakeList.txt，将-march=native删除。  2、如果仍未解决，在vscode 搜索-march=native，全部替换为空格，再进入build下，         make -j 进行编译。切记不要用 build.sh  3、如果不行，考虑吧cmakelist -O3换成O2 单独运行
+
+ORB_SLAM2_PointMap_SegNetM功能包出现,运行到第二帧出现“段错误，核心已转储”然后停止运行，roslaunch DS-SLAM.launch也是第二帧就挂掉，考虑eigen版本过高。 办法：卸载原来eigen，换成版本为eigen3.2.1（无效，现在感觉还是代码具体实现问题）
+
+在项目报告完成后，还跑了一些只有半程的数据，还尝试了一下托管到GitHub，但是由于之后无法开机回退到项目报告完成后的时段。只有半程的数据可以再跑，托管到GitHub本来就没完成。
+
+结合深度信息，将大部分在一个深度区间内的特征点认为是人体上的特征点，或者取目标检测框中心十字延申一定范围的深度值，其他隔得远的进行保留，也是一种可能的方法。将目标检测到的非人体的潜在动态物体（可能运动的小物件）与人体特征点的深度值差距作为判断是否属于将被人体进行运动的物体，若深度值差距小也认为是动态物体而剔除动态特征点。提取框内动态特征点的方法也可以结合深度匹配，且废除刷新机制以保证只弥补检测不到的前后帧的检测。卡尔曼也可以预测目标检测框的深度。
+
+深度图像法不可行，告一段落：数据集的深度图像很奇怪，会有大量不明原因的0，集中在人体的上半身和背景天花板，会有大量不明原因的异常极大值（深度相机也有极限的测量距离，而且距离很短，TUM数据集的好像不超过半米，异常极大值就是贴近相机极限值的异常值），随机出现在人体的中间部分，这些都是需要专门处理噪声，因此难以通过深度来保留背景非人体特征点。同时，又因为深度为0的区域和之前只提取描述子计算汉明距离时与任何描述子距离都相近的区域很相近，推测深度相机获取深度数据时，也会受到光照和反射等各种因素影响，而它们也会同时影响通过视觉的描述子的提取。最后发现，深度数据中还有些比极大值略小的异常大值，尤其发生在人体运动时，深度数据会极易发生相对于正常数据值的异常大值的现象，此时只有少部分像素能够有正常数据值，因此也无法只按照异常极大值来设定一个过滤阈值，因为在正常深度区间人体运动照样会有相对于正常值的异常大值。所以这个和提取潜在动态特征点一样，理论上可行，但因为光照角度等不可控因素使得数据不可靠，因此算法不可行，最多在论文中吹逼，并附上只有一两张的数据图像。
+
+## 测试算法精度，获得确切的表格数据
+
+一般来说，对于某个特定研究方向，是会有常用的研究工具的。例如TUM数据集作为面向SLAM的数据集平台，它还提供一个可以方便获得数据和可视化图像的工具：
+
+测试工具：https://svncvpr.in.tum.de/cvpr-ros-pkg/trunk/rgbd_benchmark/rgbd_benchmark_tools/src/rgbd_benchmark_tools/
+下载associate.py ，evaluate_ate.py，evaluate_rpe.py等
+
+官网：https://vision.in.tum.de/data/datasets/rgbd-dataset/tools#absolute_trajectory_error_ate
+
+生成ATE图像：
+
+`python evaluate_ate.py groundtruth.txt CameraTrajectory.txt --plot result.png`
+
+生成RTE图像：
+
+`python evaluate_rpe.py groundtruth.txt KeyFrameTrajectory2.txt --fixed_delta --plot rpe.png`
+
+生成点云：
+
+`python generate_pointcloud.py path_rgb path_depth path_ply`
+
+## 卡尔曼滤波
+
+卡尔曼滤波认为测量值的误差值围绕真实值呈高斯分布。通过上一个时刻的最终估计值和当前时刻的测量值来进行当前时刻的状态估计（获得当前时刻的最终估计值），而不需要之前的所有时刻的状态。1.对于移动物体的目标检测能检测到目标但精度不够，某一时刻目标检测框不一定框住了目标，这个目标检测框就是一种测量值，卡尔曼滤波将会通过之前几个时刻的信息的某个模型来给出当前时刻的估计值（预测），与当前时刻的测量值加权，来给出当前时刻的更准确的最终估计值（更新）。2.对于任何物体的目标检测不能检测到目标，某一时刻没有目标检测框，卡尔曼滤波将会通过之前几个时刻的信息的某个模型来给出当前时刻的估计值（预测），又因为当前时刻没有测量值，因此直接将这个估计值当作当前时刻的最终估计值（更新）。3.将1.和2.结合起来，每个时刻都进行预测和更新但不使用，然后进行下一时刻的预测进行使用。
+
+跳动过大、乱飞出屏幕，需要进行限制，重新根据目标检测框生成卡尔曼滤波器。
 
 ## VMware虚拟机Linux系统分区扩容方法
 
@@ -384,193 +574,3 @@ ORB-SLAM3（原封不动版本）抽风段错误：一个数据集能够从头�
 发现：ORB_SLAM2+Yolo和ORB_SLAM3都能跑通的数据集，GCNv2_SLAM+Yolo跑不通，合着GCNv2的问题，还是其他跑的结果都太抽象？（因为目前表现出效果越差越容易跑完）
 
 对于中途闪退有个好办法：修改主函数中检测指定路径图片数量的变量的值大小，数据集不用改，就可以只跑数据集的部分数据，生成对应的部分结果。甚至可以尝试把一个数据集中能跑的部分分别跑出来然后再合并。
-
-## 安装ORB-SLAM3和ORB-SLAM2（Ubuntu）
-
-通过git下载ORB-SLAN3源码（必须通过国内源或其他方式来下载，直接git会因为网速过慢出现各种错误）。
-
-安装以下依赖（版本可以通过终端确定，不同依赖的确定方法不同）：
-
-Ubuntu20.04
-Opencv4.2.0（ORB-SLAM2需要Opencv3.多，可以安装多一个Opencv3.4.5，测试可行）
-C++11（有就行）
-Eigen3.3.7（ORB-SLAM2在编译时会有警告，但不影响编译）
-Python3.8（有就行）
-Pangolin0.8（ORB-SLAM2在编译时会有警告，但不影响编译）
-
-更改编译文件（通过gedit指令打开文本文件进行修改并保存）：
-
-`gedit home/orb_slam3/CMakeLists.txt`：33行左右，改成`find_package(OpenCV 4.2)`，41行左右，改成`find_package(Eigen3 REQUIRED)`。
-
-`gedit /home/orb_slam3/Examples_old/ROS/ORB_SLAM3/CMakeLists.txt`：33行左右，改成`find_package(OpenCV 4.2)`，41行左右，改成`find_package(Eigen3 REQUIRED)`。49行左右，改成`${PROJECT_SOURCE_DIR}/…/…/…/Thirdparty/Sophus`
-
-`gedit /home/orb_slam3/Thirdparty/DBoW2/CMakeLists.txt`：33行左右，改成`find_package(OpenCV 4.2)`
-
-`gedit /home/orb_slam3/Examples/Monocular/mono_euroc.cc`：83行左右，false改为true。
-
-`gedit ~/.bashrc`：在文件末尾添加一行，添加`export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:PATH/ORB_SLAM3/Examples_old/ROS`，然后执行`source ~/.bashrc`生效改动。
-
-打开build.sh，将`make -j`均改为`make -j核数`。
-
-在ORB_SLAM3文件夹下打开终端，进行ORB-SLAM3的编译：
-
-```
-chmod +x build.sh # 获得权限
-./build.sh # 进行编译。注意此指令是运行同目录下的build.sh文件，又因为.sh文件本质上是终端运行的脚本，因此各种需要编译的第三方库的相对路径是相对于同目录来说的，必须在同路径下用./build.sh运行来保证相对路径正确，不能在其他路径下例如../build.sh运行会导致编译项目不完全。
-```
-
-编译多次完全卡死（鼠标不能进行交互），检查上述对于CMakeLists.txt的修改是否正确，虚拟机重启后它可能会自动进行的更改，提高虚拟机核数（一般1/4），提高虚拟机内存至8G。
-
-### 安装ORB-SLAM2，主要是因为GCNv2_SLAM自带ORB-SLAM2
-
-[GCNv2复现-CPU-CSDN博客](undefined)
-
-GCNv2需要安装1.0.1版本以上的libtorch，此处选择1.4.0。
-
-GCNv2在Github上的开源本来就和ORB-SLAM2合并在一起，称为GCNv2_SLAM。
-
-GCNv2的PyTorch原理代码（没什么用，不自己训练）：
-
-![f3f5d48509b6c1fc9ba2bac14e6cbc58.png](_resources/f3f5d48509b6c1fc9ba2bac14e6cbc58.png)
-
-![93cd7cb493ac9ba24577df679665bad2.png](_resources/93cd7cb493ac9ba24577df679665bad2.png)
-
-## 使用ORB-SLAM3和GCNv2_SLAM
-
-### 测试ORB-SLAM3
-
-https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets#downloads
-
-![9168012c9954845d218f56f6caf2b006.png](_resources/9168012c9954845d218f56f6caf2b006.png)
-
-在ORB_SLAM3文件夹，创建新的文件夹datasets，然后在datasets文件夹下，创建新的文件夹MH01，把数据集压缩包解压后的MH01_01_easy/mav0文件夹复制到这里。
-
-在ORB_SLAM3/Examples文件夹下打开终端，对数据集运行ORB_SLAM3：
-
-`./Monocular/mono_euroc ../Vocabulary/ORBvoc.txt ./Monocular/EuRoC.yaml ../datasets/MH01 ./Monocular/EuRoC_TimeStamps/MH01.txt`
-
-对于TUM数据集，下载rgbd_dataset_freiburg3_long_office_household到datasets
-
-在ORB_SLAM3文件夹下打开终端，对数据集运行ORB_SLAM3：
-
-`./Examples/RGB-D/rgbd_tum ./Vocabulary/ORBvoc.txt ./Examples/RGB-D/TUM3.yaml ./datasets/rgbd_dataset_freiburg3_long_office_household ./datasets/rgbd_dataset_freiburg3_long_office_household/associations.txt`
-
-（在ORB_SLAM3/Examples/RGB-D文件夹打开终端）`./rgbd_tum Vocabulary/ORBvoc.txt ./TUM3.yaml datasets/rgbd_dataset_freiburg3_walking_rpy datasets/rgbd_dataset_freiburg3_walking_rpy/associations.txt`
-
-### 测试GCNv2_SLAM
-
-[GCNv2复现-CPU-CSDN博客](undefined)
-
-![642f52890a955fa3f5e31af670b6e17d.png](_resources/642f52890a955fa3f5e31af670b6e17d.png)
-
-在GCNv2_SLAM文件夹，创建新的文件夹datasets，然后在datasets创建夹下，建新的文件夹TUM，把数据集压缩包解压到此路径下。
-
-接下来，由于GCNv2_SLAM的输入是经过自行合并的数据，因此需要对解压的数据删除注释然后进行合并的预处理才能跑。
-
-将合并得到的associations.txt放到上述的数据集压缩包解压得到的文件夹下，打开终端cd到GCN2文件夹下执行（run.sh中可以查看运行指令格式）：
-
-- 使用320x240（640x480模型效果很差，不是主要的训练方向）的GCNv2模型（测试用例仅限RGBD形式）：
-
-`GCN_PATH=gcn2_320x240.pt ./rgbd_gcn ../Vocabulary/GCNvoc.bin TUM3_small.yaml /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household/associations.txt`
-
-- 不使用GCNv2模型仅使用ORB-SLAM2（RGBD形式）：
-
-`USE_ORB=1 ./rgbd_gcn ../Vocabulary/GCNvoc.bin TUM3_small.yaml /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_long_office_household/associations.txt`
-
-其中rgbd_gcn.cc即为具体执行的文件。
-
-上述的long_office_household是平稳围绕一个静态办公室工位拍摄的素材，如果换成walking_rpy，有动态人体运动的素材，可以看到SLAM直接飞了，这就是结合yolo剔除动态点的意义。
-
-## 为Yolo配置环境并下载Yolo
-
-Yolo基于PyTorch，PyTorch安装过程：[（个人）人工智能技术及应用（大二下）](undefined)。
-
-Yolo v5/v7/v9是一个系列的，Yolo v8/v10是一个系列的，Yolov10在资源占用的减少上获得了质的提升，非常适合用于嵌入式设备的部署。
-
-Yolov8主干网络为MobileNetV2。
-
-Yolov8以及Yolov10虽然是同一系列，但因为都使用本地的ultralytics库，建议还是区分两个不同的虚拟环境。如果需要对Yolov8以及Yolov10的代码进行修改，就不能使用`pip install ultralytics`（默认使用pip安装的ultralytics库而不是本地的ultralytics库，因而对本地的ultralytics库的代码修改不会生效），而是在虚拟环境下命令行到项目的目录先后执行，`pip install -r requirements.txt
-`（可添加`-i https://pypi.tuna.tsinghua.edu.cn/simple`换源）和`pip install -e .`，其中前者在虚拟环境中安装单独的依赖而不包括ultralytics库，后者则是将本地的ultralytics库安装到虚拟环境中并建立软链接（注意需要先卸载`pip uninstall ultralytics`，使得虚拟环境的ultralytics库与本地的ultralytics库关联，而不是与通过`pip install ultralytics`安装在虚拟环境默认路径下的ultralytics库关联，因此可以同步对本地的ultralytics库的代码修改，如果需要更换整个Yolo项目的目录，那么ultralytics库也需要重新执行`pip install -e .`来与虚拟环境建立软链接，也因为这样，最好一个Yolo项目对应一个虚拟环境，因为只要对一个项目的ultralytics库的代码进行修改就会同步到虚拟环境中）。
-
-pip install安装模块时会出现错误（ERROR: Could not find a version that satisfies the requirement xxx (from versions: none)，此错误的通用解是：在虚拟环境下power shell进行单独的pip install安装。
-
-注意有一些未知问题（例如ultralytics库循环调用）可能是因为本地的ultralytics库有问题，此时直接把Yolov10的源代码的ultralytics库覆盖并重新`pip install -e .`更新虚拟环境中的ultralytics库并对新的ultralytics库建立软链接即可。
-
-测试：`yolo predict model=yolov10s.pt`，默认运行的是`yolov10-main\ultralytics\nn\tasks.py`，需要自行下载并把yolov10s.pt模型放到与tasks.py相同目录下。
-
-测试：`yolo export model=yolov10s.pt format=onnx opset=13 simplify` 将当前目录下的yolov10s.pt模型转化为yolov10s.onnx。
-
-测试：	`yolo predict model=yolov10s.onnx` 需要把yolov10s.onnx模型放到当前目录下。
-
-测试：`python`，`import onnxruntime`，`onnxruntime.get_device()`测试onnxruntime是否能检测到GPU。
-
-## ORB-SLAM3与Yolo相结合
-
-由于YOLO的源码采用Python编写，ORB-SLAM3则采用C++编写，要将YOLO与ORB-SLAM3的运行环境结合，常见的方法有以下三种：
-
-1 先跑一遍YOLO程序，获得带有检测目标边界框的语义信息，然后再运行ORB_SLAM3结合边界框的语义信息去标记特征点，但这样做实际意义不大，YOLO和SLAM异步运行；
-
-2 使用UNIX域Socket实现Python和C++通信，该协议仅需要经过网络协议栈，不需要打包拆包、计算校验和、维护序列号应答，可以实现较高的通讯效率；
-
-3 第三种是使用C++去部署yolo，在ORB-SLAM3中单独写一个类用于实现yolo，可以使用libtorch、onnxruntime来实现这个功能。又因为Yolov10的版本较新，libtorch可能没有对应版本可用（C++版本的PyTorch以实现C++下跑.pt模型），且Yolov10可以训练输出onnx模型，因此可以使得onnx模型的推理过程通过onnxruntime来在C++中部署yolo。
-
-### 代码逻辑
-
-Yolo和ORB-SLAM的运行代码结合：
-
-对于通过Yolov10进行动态特征点的剔除，实际上有三种方法。第一种是通过语义分割对所有特征点进行逐一的排查（50ms级，因实时性太差不可采用）；第二种是通过目标检测框对识别到的动态物体和潜在动态物体的目标检测框内的特征点进行剔除（0.01ms级，精度尚可）；第三种是同时进行目标检测和语义分割，然后对动态物体的目标检测框内的特征点进行逐一排查（25ms级，精度最高）。
-
-在Github上搜索ORB-SLAM与GCNv2相结合的项目，和ORB-SLAM与Yolo相结合的项目，某些项目具有Comparing changes功能，比对原项目的修改，也就是ORB-SLAM的原项目的差别和具体改动。
-
-把Yolo模型推理并画框和剔除动态点的代码放置在Tracking.cc的Track()函数获得特征点之后，进行后处理之前。目标检测模型常常隔帧检测失效，需要将历史框和卡尔曼滤波获得的预测框也一起考虑来进行剔除弥补不稳定。
-
-反向思维，只在被其他静态物体汉明匹配到时延长存在时间，匹配到就保留。发现问题，反相之后发现有很多时候人体也是能够特征点匹配，但是这些帧被逻辑上框内点就不计算汉明距离标识色为倒计时而不是匹配点蓝色，所以以为人体特征点根本不能做匹配，其实还是有大半点可以的，而这些帧也是目标检测模型工作良好的帧，其实是不需要进行存储的，要存储的其实是那些目标检测不工作的帧的人体特征点，这怎么办呢？可能就需要卡尔曼滤波了。科研需要的严谨可以理解为从头到尾遇到的所有问题都有一个交代，无论是研究重点、一般处理还是无法处理，都需要提及并交代清楚，是针对一个问题的全面涉及的方案。
-
-卡尔曼滤波预测轨迹，但后几帧都没有怎么办？卡尔曼补的帧中的特征应该才是需要存储的帧，用于目标检测或卡尔曼失效的情况，或者辅助后续卡尔曼滤波的作用。而且目前历史框多的时候人体运动剔除的点太多，适量取帧和卡尔曼
-
-对于取潜在动态特征点计算汉明距离的方法，主要是为了提高低参数量目标检测对暂时静态人体的检测的鲁棒性，但需要后续结合深度或IMU。然后卡尔曼滤波框和潜在动态特征点获得的图片可以用于持续学习定制化。就算是只取下半身的特征点存储也还是少量脸头发能偶尔匹配到和天花板能一直匹配到，因此天花板一直有特征点也基本被GCNv2不作为关键特征点（和什么特征点的汉明距离都小，自然不能作为关键特征点，相比之下人体特征点很难进行匹配就很容易被作为关键特征点），因此取潜在动态特征点不结合深度和IMU可能不行，而且只能是静态时的。这也算是一种模型互补融合的创新。可以试试汉明距离阈值无限大测试目标检测失效帧的特征到底有多离谱，或者测试出一个阈值，与历史框和卡尔曼框内的重叠才能进行动态点剔除。可以看出，想法是会根据实验现象和认知和改进方向不断涌出的，即使是我这个第一次科研项目在具体实现上的问题也会延伸出以上的各种奇妙的想法，它们极大部分都是无效的，或者别人已经做过的且具有更成熟方案，而证明有效性和无效性就是研究的目的。
-
-直接取框的外围（代码加个取反条件即可）和边缘以外的特征点存储作为静态特征点，且需要通过匹配才能保留。仍然不行，鉴定为人头和天花板对什么特征的描述子都相近，可能不止需要描述子。卡尔曼多个对象分别的历史记录，因为可能互不一起被检测到，需要将不连续的历史记录拼一起。匈牙利算法数据关联提高鲁棒性。
-
-GCNv2数量和平均度支持动态点剔除和防止lost，历史记录+当前+卡尔曼滤波预测一起保持yolo鲁棒性。未来需要解决段错误问题+结合IMU+有效成果=论文
-
-（天坑）GCNv2的论文和相关论文没有提及，但它对于动态环境的鲁棒性提升巨大，即使不做动态物体特征点剔除，GCNv2_SLAM本身就已经既稳定精度又高。
-
-所以后续就是看移植GCNv2到ORB-SLAM3还是移植IMU到ORB-SLAM2了。还需要解决段错误跑不完全程的问题。使用docker来确保环境的完全一致性。
-
-段错误解决方法（无效，因为最新实验删去Yolo相关代码能跑通全程，是自行嵌入的Yolo代码的逻辑仍有内存泄漏的问题）：   1、主文件和Thirdparty/g2o文件中的CMakeList.txt，将-march=native删除。  2、如果仍未解决，在vscode 搜索-march=native，全部替换为空格，再进入build下，         make -j 进行编译。切记不要用 build.sh  3、如果不行，考虑吧cmakelist -O3换成O2 单独运行
-
-ORB_SLAM2_PointMap_SegNetM功能包出现,运行到第二帧出现“段错误，核心已转储”然后停止运行，roslaunch DS-SLAM.launch也是第二帧就挂掉，考虑eigen版本过高。 办法：卸载原来eigen，换成版本为eigen3.2.1（无效，现在感觉还是代码具体实现问题）
-
-在项目报告完成后，还跑了一些只有半程的数据，还尝试了一下托管到GitHub，但是由于之后无法开机回退到项目报告完成后的时段。只有半程的数据可以再跑，托管到GitHub本来就没完成。
-
-结合深度信息，将大部分在一个深度区间内的特征点认为是人体上的特征点，或者取目标检测框中心十字延申一定范围的深度值，其他隔得远的进行保留，也是一种可能的方法。将目标检测到的非人体的潜在动态物体（可能运动的小物件）与人体特征点的深度值差距作为判断是否属于将被人体进行运动的物体，若深度值差距小也认为是动态物体而剔除动态特征点。提取框内动态特征点的方法也可以结合深度匹配，且废除刷新机制以保证只弥补检测不到的前后帧的检测。卡尔曼也可以预测目标检测框的深度。
-
-深度图像法不可行，告一段落：数据集的深度图像很奇怪，会有大量不明原因的0，集中在人体的上半身和背景天花板，会有大量不明原因的异常极大值（深度相机也有极限的测量距离，而且距离很短，TUM数据集的好像不超过半米，异常极大值就是贴近相机极限值的异常值），随机出现在人体的中间部分，这些都是需要专门处理噪声，因此难以通过深度来保留背景非人体特征点。同时，又因为深度为0的区域和之前只提取描述子计算汉明距离时与任何描述子距离都相近的区域很相近，推测深度相机获取深度数据时，也会受到光照和反射等各种因素影响，而它们也会同时影响通过视觉的描述子的提取。最后发现，深度数据中还有些比极大值略小的异常大值，尤其发生在人体运动时，深度数据会极易发生相对于正常数据值的异常大值的现象，此时只有少部分像素能够有正常数据值，因此也无法只按照异常极大值来设定一个过滤阈值，因为在正常深度区间人体运动照样会有相对于正常值的异常大值。所以这个和提取潜在动态特征点一样，理论上可行，但因为光照角度等不可控因素使得数据不可靠，因此算法不可行，最多在论文中吹逼，并附上只有一两张的数据图像。
-
-## 测试算法精度，获得确切的表格数据
-
-一般来说，对于某个特定研究方向，是会有常用的研究工具的。例如TUM数据集作为面向SLAM的数据集平台，它还提供一个可以方便获得数据和可视化图像的工具：
-
-测试工具：https://svncvpr.in.tum.de/cvpr-ros-pkg/trunk/rgbd_benchmark/rgbd_benchmark_tools/src/rgbd_benchmark_tools/
-下载associate.py ，evaluate_ate.py，evaluate_rpe.py等
-
-官网：https://vision.in.tum.de/data/datasets/rgbd-dataset/tools#absolute_trajectory_error_ate
-
-生成ATE图像：
-
-`python evaluate_ate.py groundtruth.txt CameraTrajectory.txt --plot result.png`
-
-生成RTE图像：
-
-`python evaluate_rpe.py groundtruth.txt KeyFrameTrajectory2.txt --fixed_delta --plot rpe.png`
-
-生成点云：
-
-`python generate_pointcloud.py path_rgb path_depth path_ply`
-
-## 卡尔曼滤波
-
-卡尔曼滤波认为测量值的误差值围绕真实值呈高斯分布。通过上一个时刻的最终估计值和当前时刻的测量值来进行当前时刻的状态估计（获得当前时刻的最终估计值），而不需要之前的所有时刻的状态。1.对于移动物体的目标检测能检测到目标但精度不够，某一时刻目标检测框不一定框住了目标，这个目标检测框就是一种测量值，卡尔曼滤波将会通过之前几个时刻的信息的某个模型来给出当前时刻的估计值（预测），与当前时刻的测量值加权，来给出当前时刻的更准确的最终估计值（更新）。2.对于任何物体的目标检测不能检测到目标，某一时刻没有目标检测框，卡尔曼滤波将会通过之前几个时刻的信息的某个模型来给出当前时刻的估计值（预测），又因为当前时刻没有测量值，因此直接将这个估计值当作当前时刻的最终估计值（更新）。3.将1.和2.结合起来，每个时刻都进行预测和更新但不使用，然后进行下一时刻的预测进行使用。
-
-跳动过大、乱飞出屏幕，需要进行限制，重新根据目标检测框生成卡尔曼滤波器。
