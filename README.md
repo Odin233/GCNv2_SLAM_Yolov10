@@ -4,12 +4,12 @@
 ## 目录
 
   - 视觉SLAM
-  - VMware虚拟机Linux系统分区扩容方法（用于存放更多的数据集）
-  - VMware普通版虚拟机不支持显卡直连，因而无法使用CUDA和CuDNN，只能安装CPU版，推理Windows系统中的GPU版训练的模型（Docker虚拟机可能可以显卡直连）
-  - 使用CMake-GUI进行多版本依赖安装（用于编译需要不同版本的依赖库C++项目）
+  - VMware虚拟机Linux系统分区扩容方法
+  - VMware普通版虚拟机不支持显卡直连，因而无法使用CUDA和CuDNN，只能安装CPU版，推理Windows系统中的GPU版训练的模型
+  - 使用CMake-GUI进行多版本依赖安装
   - 在项目中添加自定义路径的第三方库，通过修改CMakeLists.txt并重新编译的实现，让主项目和非主项目的源代码文件均能调用（C++编程技巧：Pimpl思想）
   - 自己编译自定义的C++库为单独的库文件
-  - 解决terminate called without an active exception Aborted (core dumped)未知错误。使用Linux自带的gdb工具来运行程序，分析内存相关的程序中途崩溃的原因，分析生成的core文件，使用更全面的工具valgrind来分析内存的使用情况。最终通过修改代码的实现来解决。
+  - 解决terminate called without an active exception Aborted (core dumped)未知错误。使用Linux自带的gdb工具来运行程序，分析内存相关的程序中途崩溃的原因，分析生成的core文件，使用更全面的工具valgrind来分析内存的使用情况。
   - 安装ORB-SLAM3和ORB-SLAM2（Ubuntu）
     - 安装ORB-SLAM2，主要是因为GCNv2_SLAM自带ORB-SLAM2
   - 使用ORB-SLAM3和GCNv2_SLAM
@@ -25,7 +25,7 @@
 
 ![ac50fdc74999b2030ecde0ee33ec52e4.png](_resources/ac50fdc74999b2030ecde0ee33ec52e4.png)
 
-## VMware虚拟机Linux系统分区扩容方法（用于存放更多的数据集）
+## VMware虚拟机Linux系统分区扩容方法
 
 使用`df -h`来查看硬盘的名字和大小，或使用`df -h 文件夹`来查看特定的文件夹所属的硬盘的名字和大小。
 
@@ -45,7 +45,7 @@
 
 完成后需要重启。
 
-## VMware普通版虚拟机不支持显卡直连，因而无法使用CUDA和CuDNN，只能安装CPU版，推理Windows系统中的GPU版训练的模型（Docker虚拟机可能可以显卡直连）
+## VMware普通版虚拟机不支持显卡直连，因而无法使用CUDA和CuDNN，只能安装CPU版，推理Windows系统中的GPU版训练的模型
 
 不支持显卡直连，不可以安装英伟达驱动。检查是否有安装驱动：
 
@@ -59,7 +59,7 @@
 
 `sudo apt install nvidia-utils-535`
 
-## 使用CMake-GUI进行多版本依赖安装（用于编译需要不同版本的依赖库C++项目）
+## 使用CMake-GUI进行多版本依赖安装
 
 Ubuntu20.04，在默认的usr/local已经安装了OpenCV4.2.0，用于编译ORB-SLAM3。而现在需要编译GCNv2_SLAM（基于ORB-SLAM2），需要OpenCV3.4.5，C++的编译可以通过CMake来指定编译时用到的依赖库的路径，以实现同一操作系统下编译需要不同版本的依赖库C++项目，但前提是不同版本的依赖库都有安装在同一操作系统下且互不冲突。通过系统自带的包管理工具（直接apt-get）安装和通过源码安装但使用的是CMake进行编译安装，对依赖库的安装均默认在系统的usr/local路径下，会覆盖掉已安装的不同版本的依赖库，而仅通过命令行版本的CMake较难设置安装路径，因此需要使用CMake-GUI来图形化地设置安装路径，方便将多个依赖库版本安装在不同的路径下，以实现类似虚拟环境的效果。
 
@@ -327,7 +327,7 @@ rm -rf /home/user/GCNv2_SLAM/onnx_model/CMakeCache.txt
 rm -rf /home/user/.local/share/Trash/files/CMakeCache.txt
 ```
 
-## 解决terminate called without an active exception Aborted (core dumped)未知错误。使用Linux自带的gdb工具来运行程序，分析内存相关的程序中途崩溃的原因，分析生成的core文件，使用更全面的工具valgrind来分析内存的使用情况。最终通过修改代码的实现来解决。
+## 解决terminate called without an active exception Aborted (core dumped)未知错误。使用Linux自带的gdb工具来运行程序，分析内存相关的程序中途崩溃的原因，分析生成的core文件，使用更全面的工具valgrind来分析内存的使用情况。
 
 运行指令示例：`GCN_PATH=gcn2_tiny_320x240.pt ./rgbd_gcn ../Vocabulary/GCNvoc.bin TUM3_small.yaml /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_walking_rpy /home/user/GCNv2_SLAM/datasets/TUM/rgbd_dataset_freiburg3_walking_rpy/associations.txt`
 
